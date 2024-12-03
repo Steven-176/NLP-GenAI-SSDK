@@ -23,6 +23,10 @@ def clean_text(text):
     text = html.unescape(text)
     # Supprimer les balises HTML
     text = re.sub(r'<[^>]+>', ' ', text)
+    # Remplacer les contractions courantes
+    contractions = {"don't": "do not", "can't": "cannot", "i'm": "i am", "you're": "you are", "it's": "it is"}
+    for contraction, full_form in contractions.items():
+        text = text.replace(contraction, full_form)
     # Supprimer les caractères non alphanumériques inutiles
     text = re.sub(r'[^\w\s]', ' ', text)
     # Supprimer les espaces multiples
@@ -38,15 +42,20 @@ def preprocess_text(doc):
     tokens = [
         token.lemma_.lower()
         for token in doc
-        if not token.is_stop and not token.is_punct and not token.like_num and not token.is_space
+        if not token.is_stop  # Supprimer les stop words
+        and not token.is_punct  # Supprimer la ponctuation
+        and not token.like_num  # Supprimer les nombres
+        and not token.is_space  # Supprimer les espaces
+        and len(token) > 2  # Supprimer les mots courts (<= 2 caractères)
     ]
-    return tokens
+    # Supprimer les répétitions
+    return list(dict.fromkeys(tokens))
 
 # Appliquer le nettoyage et le prétraitement
 reviews_df["processed"] = reviews_df["cleaned_document"].apply(preprocess_text)
 
 # Sauvegarder les données prétraitées dans un fichier JSON
-output_file = "preprocessed_reviews.json"
+output_file = "preprocessed_reviews.jsonl"
 reviews_df[["processed"]].to_json(output_file, orient="records", lines=True)
 
 print(f"Données prétraitées sauvegardées dans {output_file}")
