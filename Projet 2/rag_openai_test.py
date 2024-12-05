@@ -1,12 +1,35 @@
 import json
 from langchain_text_splitters import RecursiveCharacterTextSplitter
+# from langchain.embeddings import HuggingFaceEmbeddings
+# from langchain_community.embeddings import HuggingFaceEmbeddings
+from langchain_huggingface import HuggingFaceEmbeddings
+# from langchain.vectorstores import FAISS
+from langchain_community.vectorstores import FAISS
+# from langchain.chat_models import ChatOpenAI
+from langchain_openai import ChatOpenAI
+# from langchain_chroma import Chroma
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
+
+OPENAI_API_KEY = os.environ.get('OPENAI_API_KEY')
+
+MODEL_NAME = "sentence-transformers/all-MiniLM-L6-v2"
 
 # 1. Chargement des données
 def load_data(file_path):
     with open(file_path, 'r', encoding='utf-8') as f:
         data = [json.loads(line) for line in f]
     # Extraire les descriptions
-    texts = [item.get('description', '') for item in data if 'description' in item]
+    texts = []
+    for item in data:
+        if 'description' in item:
+            description = item['description']
+            if isinstance(description, list):  # Si c'est une liste, concaténer les éléments
+                description = ' '.join(description)
+            if isinstance(description, str) and description.strip():  # Vérifier que ce n'est pas vide
+                texts.append(description.strip())
     return texts
 
 # Charger les descriptions des produits
@@ -14,9 +37,9 @@ data = load_data('meta.jsonl')
 
 # print(data)
 
-print(f"Nombre de descriptions chargées : {len(data)}")
-for i, description in enumerate(data[:5]):  # Afficher les 5 premières descriptions
-    print(f"Description {i+1}: {description}")
+# print(f"Nombre de descriptions chargées : {len(data)}")
+# for i, description in enumerate(data[:5]):  # Afficher les 5 premières descriptions
+#     print(f"Description {i+1}: {description}")
 
 # 2. Prétraitement et segmentation
 def preprocess_texts(texts, chunk_size=512, chunk_overlap=128):
@@ -33,4 +56,24 @@ def preprocess_texts(texts, chunk_size=512, chunk_overlap=128):
 
 chunks = preprocess_texts(data)
 
-print(chunks)
+# for i,chunk in enumerate(chunks):
+#     print(f'Description {i} : {chunks[i]}')
+
+# 3. Génération des embeddings
+embedding_model = HuggingFaceEmbeddings(model_name=MODEL_NAME)
+
+# # Vérification des embeddings
+# for i, chunk in enumerate(chunks[:5]):  # Limiter l'affichage aux 5 premiers chunks
+#     embedding = embedding_model.embed_query(chunk)  # Générer l'embedding pour un chunk
+#     print(f"Chunk {i + 1}: {chunk[:50]}...")  # Afficher un aperçu du chunk
+#     print(f"Embedding {i + 1}: {embedding[:10]}...")  # Afficher les 10 premières valeurs de l'embedding
+#     print(f"Taille de l'embedding : {len(embedding)}")
+
+# 3. Créer la base vectorielle avec FAISS
+vectorstore = FAISS.from_texts(
+    texts=chunks,
+    embedding=embedding_model
+)
+
+# 4. Configurer le modèle LLM
+llm = ChatOpenAI(model="gpt-3.5-turbo", openai_api_key=OPENAI_API_KEY)
