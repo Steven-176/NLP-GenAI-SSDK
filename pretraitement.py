@@ -3,6 +3,15 @@ import spacy
 import re
 import json
 
+def clean_text_before_tokenization(doc):
+
+    doc = re.sub(r"<.*?>", " ", doc)
+
+    doc = re.sub(r"\b\w{1,2}\b", " ", doc)
+
+    doc = re.sub(r"\s+", " ", doc).strip()
+    return doc
+
 reviews_file_path = './reviews.jsonl'
 
 reviews_df = pd.read_json(reviews_file_path, lines=True)
@@ -13,22 +22,12 @@ documents = (selected_fields['title'] + " " + selected_fields['text']).tolist()
 
 nlp = spacy.load("en_core_web_sm")
 
-def clean_text_before_tokenization(doc):
-
-    doc = re.sub(r"<.*?>", " ", doc)
-
-    doc = re.sub(r"\b\w{1,2}\b", " ", doc)
-
-    doc = re.sub(r"\s+", " ", doc).strip()
-    return doc
-
 documents = [clean_text_before_tokenization(doc) for doc in documents]
 
 lemmatized_documents = [[token.lemma_.lower() for token in nlp(doc)] for doc in documents]
 
-#print(lemmatized_documents[:3])
 
-print("\n---------------------------------------------\n")
+print("\n---------------------- 1 ----------------------\n")
 
 filtered_tokens = [
     [
@@ -43,15 +42,9 @@ filtered_tokens = [
     ] 
     for doc in lemmatized_documents]
 
-#print(filtered_tokens[:3])
-
-#print(cleaned_documents[:3])
-
-print("\n---------------------------------------------\n")
-
 print(filtered_tokens[:5])
 
-print("\n---------------------------------------------\n")
+print("\n---------------------- 2 ----------------------\n")
 
 output_file = "pretreated_reviews.json"
 
