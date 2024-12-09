@@ -73,7 +73,7 @@ for cluster, docs in documents_by_cluster.items():
     print("Exemple de mots fréquents :", [word for word, freq in word_frequencies_by_cluster[cluster]])
     print("Exemple de document :", " ".join(docs[0][:20]) if docs else "Aucun document")
 
-
+# Commentaire : Les clusters semblent pertinents en fonction des mots fréquents et des exemples de documents.
 
 print("\n-------------------    Étape 4 : Extraction des mots-clés (TF-IDF)   -------------------\n")
 
